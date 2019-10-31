@@ -5,8 +5,8 @@
 
 
 
-void zot(unsigned int *stop) {
-    unsigned int r = 0x3;
+void zot(unsigned long *stop) {
+    unsigned long r = 0x3;
 
     unsigned long *i;
     for(i = &r; i <= stop; i++) {
@@ -22,7 +22,7 @@ void foo(unsigned long *stop) {
 
 
 int main() {
-    
+
   int pid = getpid();
   
   unsigned long p = 0x1;
