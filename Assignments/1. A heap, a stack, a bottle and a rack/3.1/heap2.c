@@ -19,7 +19,7 @@ int pid = getpid();
   char command[50];
   sprintf(command, "cat /proc/%d/maps", pid);
   system(command);
-/*
+
   free(heap);
 
   printf("heap[2]:  0x%lx \n", heap[2]);
@@ -29,6 +29,6 @@ int pid = getpid();
   printf("heap[-2]:  0x%lx \n", heap[-2]);
 
   system(command);
-*/
+
   return 0;
 }
