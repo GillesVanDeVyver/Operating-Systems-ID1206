@@ -15,5 +15,8 @@ int main() {
       wait(&res);
       printf("The result was %d\n", WEXITSTATUS(res));
     }
-return 0;
+
+    printf("This is the end \n");
+    
+    return 0;
 }
