@@ -10,14 +10,14 @@ void handler (int sig){
 
 int main (){
 
-  struct sigaction sa;
+  struct sigaction siga;
   int pid = getpid();
   printf("ok, let's go, kill me (%d) if you can!\n", pid);
 
-  sa.sa_handler = handler;
-  sa.sa_flags = 0;
-  sigemptyset(&sa.sa_mask);
-  if (sigaction(SIGINT, &sa, NULL) != 0){
+  siga.sa_handler = handler;
+  siga.sa_flags = 0;
+  sigemptyset(&siga.sa_mask);
+  if (sigaction(SIGINT, &siga, NULL) != 0){
     return(1);
   }
 
