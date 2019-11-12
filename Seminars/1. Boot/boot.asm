@@ -20,7 +20,7 @@ start:
     jmp .next         ; repeat
 
   .done:
-    jmp $             ; loop forevah
+    jmp $             ; loop forever
 
   msg: db 'Hello', 0  ; the string we want to print
 
