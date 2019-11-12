@@ -20,9 +20,9 @@ start:
     jmp .next         ; repeat
 
   .done:
-    jmp $             ; loop forever
+    jmp $             ; loop forevah
 
-  msg:  db "Hello", 0 ; the string we want to print
+  msg: db 'Hello', 0  ; the string we want to print
 
   times 510-($-$$) db 0 ; fill up to 510 bytes
   dw 0xAA55             ; master boot record signature
