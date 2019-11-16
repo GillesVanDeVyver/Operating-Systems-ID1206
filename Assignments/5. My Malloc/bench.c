@@ -1,11 +1,18 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+#include "rand.h"
 
-#define ROUNDS 100
+#define ROUNDS 1000
 #define LOOP 100000
+#define BUFFER 100
 
 int main(){
+  void *buffer[BUFFER];
+  for(int i = 0; i < BUFFER; i++){
+    buffer[i] = NULL;
+  }
+
   void *init = sbrk(0);
   void *current;
 
@@ -14,7 +21,12 @@ int main(){
   for(int j = 0; j < ROUNDS; j++){
     for(int i = 0; i < LOOP; i++){
 
-      size_t size = (rand() % 4000) + sizeof(int);
+      int index = rand() % BUFFER;
+      if(buffer[index] != NULL){
+        free(buffer[index]);
+      }
+
+      size_t size = (size_t)request();
       int *memory;
       memory = malloc(size);
 
@@ -22,11 +34,10 @@ int main(){
         fprintf(stderr, "%malloc failed\n");
         return 1;
       }
-        /* writing to the memory so we know it exists*/
-        *memory = 123;
-        free(memory); 
+      buffer[index] = memory;
+      /* writing to the memory so we know it exists*/
+      *memory = 123;
     }
-
     current = sbrk(0);
     int allocated = (int)((current - init) / 1024);
     printf("%d\n", j);
