@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#define ROUNDS 1000
+#define ROUNDS 100
 #define LOOP 100000
 
 int main(){
