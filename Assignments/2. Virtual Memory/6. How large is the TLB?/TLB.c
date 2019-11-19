@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <time.h>
 
-#define PAGES (4096)
+#define PAGES (16)
 #define REFS (1024*1024)
 #define PAGESIZE (4*1024)
 
