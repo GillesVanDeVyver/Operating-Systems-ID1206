@@ -9,7 +9,7 @@ set title "Evaluation of length of ordered free list"
 set key right center
 
 set xlabel "Number of allocations"
-set ylabel "Length of free list (ms)"
+set ylabel "Length of free list"
 
 set xrange [0:10000]
 set yrange [0:85]
