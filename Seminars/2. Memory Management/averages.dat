@@ -1,0 +1,13 @@
+#Evaluation of average free list size 
+#Allocs     Length
+
+1000    7
+2000    17
+3000    27
+4000    37
+5000    47
+6000    56
+7000    66
+8000    76
+9000    86
+10000   96
