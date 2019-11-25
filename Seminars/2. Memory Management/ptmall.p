@@ -3,7 +3,7 @@
 set terminal png
 set output "ptmall.png"
 
-set title "First implementation of dalloc()"
+set title "dalloc() with unordered free list"
 
 set key right center
 
