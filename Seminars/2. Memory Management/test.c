@@ -4,26 +4,22 @@
 #include "ptmall.h"
 #include "rand.h"
 
-int allocs; // number of blocks requested
-int buffer; //how many blocks we can hold at a given time
-int maxReqSize; // max block size request
+#define BUFFER 100 //how many blocks we can hold at a given time
+#define MAX_SIZE 100 // max block size request
 
-/**
-* Will palloc/pree simulating a real program
-*/
-void testAlloc(int bufferSize){
-  void *buffer[bufferSize];
-  for(int i = 0; i < bufferSize; i++){
+void runAllocs(int allocs){
+  void *buffer[BUFFER];
+  for(int i = 0; i < BUFFER; i++){
     buffer[i] = NULL;
   }
 
   for(int i = 0; i < allocs; i++){
-    int index = rand() % bufferSize;
+    int index = rand() % BUFFER;
     if(buffer[index] != NULL){
       pree(buffer[index]);
     }
 
-    size_t size = (size_t)request(maxReqSize);
+    size_t size = (size_t)request(MAX_SIZE);
     int *memory;
     memory = palloc(size);
 
@@ -37,36 +33,35 @@ void testAlloc(int bufferSize){
   }
 }
 
-void evalFlistLength(){
-  printf("# Checking length of flist\n# BufferSize\tflistLength\n");
-  for(int i = 10; i < buffer; i+= 10){
+void evalFlistLength(int allocs){
+  printf("# Checking length of flist\n# Allocs\tflistLength\n");
+  int sum, average = 0;
+  for(int i = BUFFER; i < allocs+1; i+= 10){
     init();
-    testAlloc(i);
-    printCountLengthOfFlist(i);
+    runAllocs(i);
+    sum+= printCountLengthOfFlist(i);
+    average = sum/100;
     terminate();
   }
+  printf("Average length of free list is: %d \n", average);
+}
+
+void evalFlistDistr(int allocs){
+  printf("# Checking distribution of the block sizes in flist\n# Average\tflistLength\n");
   init();
-  testAlloc(buffer);
-  printCountLengthOfFlist(buffer);
+  runAllocs(allocs);
+//  printAverageSizeDistributionOfFlist();
   terminate();
 }
 
-void evalFlistDistr(){
-  printf("# Checking distribution of the block sizes in flist\n");
-  init();
-  testAlloc(buffer);
-  printSizeDistributionOfFlist(buffer);
-  terminate();
-}
-
-void evalTimePerformance(){
-  printf("# Evaluation of time performance\n# BufferSize\tTime(ms)\n");
+void evalTimePerformance(int allocs){
+  printf("# Evaluation of time performance\n# Allocs\tTime(ms)\n");
   clock_t time_start, time_stop;
   double timeAlloc = 0;
-  for(int i = 10; i < buffer; i+= 10){
+  for(int i = BUFFER; i < allocs; i+= 10){
     init();
     time_start = clock();
-    testAlloc(i);
+    runAllocs(i);
     time_stop = clock();
     terminate();
     timeAlloc = ((double)(time_stop - time_start)) / ((double)CLOCKS_PER_SEC/1000);
@@ -74,32 +69,46 @@ void evalTimePerformance(){
   }
   init();
   time_start = clock();
-  testAlloc(buffer);
+  runAllocs(allocs);
   time_stop = clock();
   terminate();
   timeAlloc = ((double)(time_stop - time_start)) / ((double)CLOCKS_PER_SEC/1000);
-  printf("%d\t%f\n", buffer, timeAlloc);
+  printf("%d\t%f\n", allocs, timeAlloc);
 }
 
 void testSanity(){
   init();
-  testAlloc(buffer);
+  runAllocs(1000);
+  sanity();
+  terminate();
+}
+
+void simpleTest(){
+  init();
+  int *mem = palloc(80);
+  int *mom = palloc(1000);
+  pree(mem);
+  pree(mom);
   sanity();
   terminate();
 }
 
 int main(int argc, char const *argv[]){
-  if(argc < 4){
-    printf("Please enter:\tBuffer size\tLoops\tMax size of request\n");
+  
+  
+//evalTimePerformance(atoi(argv[1]));
+  evalFlistLength(atoi(argv[1]));
+
+  /*if(argc < 2){
+    printf("Please enter:\tNumberOfAllocs\n");
     exit(1);
   }
-  buffer = atoi(argv[1]);
-  allocs = atoi(argv[2]);
-  maxReqSize = atoi(argv[3]);
+  int allocs = atoi(argv[1]);
   srand(time(0));
-  //evalFlistLength();
-  //evalFlistDistr();
-  evalTimePerformance();
+  //evalFlistLength(allocs);
+  evalFlistDistr(allocs);*/
+  //evalTimePerformance(allocs);
   //testSanity();
+  //simpleTest();
   return 0;
 }

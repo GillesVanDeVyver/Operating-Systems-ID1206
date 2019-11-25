@@ -406,7 +406,7 @@ void sanity(){
   printf("Sanity passed!\n");
 }
 
-void printCountLengthOfFlist(int bufferSize){
+int printCountLengthOfFlist(int bufferSize){
   int count = 0;
   struct head *next = flist;
   while(next != NULL){
@@ -414,7 +414,7 @@ void printCountLengthOfFlist(int bufferSize){
     next = next->next;
   }
   printf("%d\t%d\n", bufferSize, count);
-  //printf("Size: %d\n", count);
+  return count;
 }
 
 void printSizeDistributionOfFlist(int buffSize){
