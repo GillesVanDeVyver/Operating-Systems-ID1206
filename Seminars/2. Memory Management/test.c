@@ -35,16 +35,15 @@ void runAllocs(int allocs){
 
 void evalFlistLength(int allocs){
   printf("# Checking length of flist\n# Allocs\tflistLength\n");
-  for(int i = BUFFER; i < allocs; i+= 10){
+  int sum, average = 0;
+  for(int i = BUFFER; i < allocs+1; i+= 10){
     init();
     runAllocs(i);
-    printCountLengthOfFlist(i);
+    sum+= printCountLengthOfFlist(i);
+    average = sum/100;
     terminate();
   }
-  init();
-  runAllocs(allocs);
-  printCountLengthOfFlist(allocs);
-  terminate();
+  printf("Average length of free list is: %d \n", average);
 }
 
 void evalFlistDistr(int allocs){
@@ -97,7 +96,9 @@ void simpleTest(){
 int main(int argc, char const *argv[]){
   
   
-  evalTimePerformance(atoi(argv[1]));
+//evalTimePerformance(atoi(argv[1]));
+  evalFlistLength(atoi(argv[1]));
+
   /*if(argc < 2){
     printf("Please enter:\tNumberOfAllocs\n");
     exit(1);

@@ -492,14 +492,17 @@ void sanity(){
   printf("Sanity passed!\n");
 }
 
-void printCountLengthOfFlist(int numOfAllocs){
+int printCountLengthOfFlist(int numOfAllocs){
   int count = 0;
+  int sum = 0; 
+  int average = 0;
   struct head *next = flist;
   while(next != NULL){
     count++;
     next = next->next;
   }
   printf("%d\t%d\n", numOfAllocs, count);
+  return count;
 }
 
 void printSizeDistributionOfFlist(int buffSize){
