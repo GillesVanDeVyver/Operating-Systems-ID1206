@@ -3,7 +3,7 @@
 set terminal png
 set output "ptmall.png"
 
-set title "dalloc() with improvements"
+set title "dalloc() with ordered free list"
 
 set key right center
 
