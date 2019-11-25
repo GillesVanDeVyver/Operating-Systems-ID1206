@@ -3,14 +3,14 @@
 set terminal png
 set output "ptmall.png"
 
-set title "First implementation of dalloc()"
+set title "dalloc() with improvements"
 
 set key right center
 
-set xlabel "Buffer size"
-set ylabel "Time per dalloc (ms)"
+set xlabel "Number of allocations performed"
+set ylabel "Time per dalloc (s)"
 
-set xrange [0:100]
+set xrange [0:1000]
 set yrange [0:0.3]
 
 plot "ptmall.dat" u 1:2 w linespoints title "ptmall"

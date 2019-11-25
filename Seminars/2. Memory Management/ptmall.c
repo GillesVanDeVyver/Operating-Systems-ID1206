@@ -19,24 +19,6 @@
 struct head *arena = NULL;
 struct head *flist = NULL;
 
-/*
-struct head *flist16 = NULL;
-struct head *flist24 = NULL;
-struct head *flist32 = NULL;
-struct head *flist40 = NULL;
-struct head *flist48 = NULL;
-struct head *flist56 = NULL;
-struct head *flist64 = NULL;
-struct head *flist72 = NULL;
-struct head *flist80 = NULL;
-struct head *flist88 = NULL;
-struct head *flist96 = NULL;
-struct head *flist104 = NULL;
-struct head *flist112 = NULL;
-struct head *flist120 = NULL;
-struct head *flist128 = NULL;
-*/
-
 struct head {
   uint16_t bfree; // 2 bytes, the status of the block before
   uint16_t bsize; // 2 bytes, the size of the block before
@@ -145,6 +127,41 @@ void insert(struct head *block){
 }
 
 /**
+* Insert alá insertion sort
+*/
+void insert_order(struct head *block){
+  struct head *ptr = flist;
+  if(ptr == NULL){
+    block->prev = NULL;
+    block->next = NULL;
+    flist = block;
+    return;
+  }
+  struct head *prevPtr = ptr->prev;
+  while(ptr != NULL){
+    if(block->size <= ptr->size){
+      if(prevPtr != NULL){
+        prevPtr->next = block;
+      }
+      block->prev = prevPtr;
+      ptr->prev = block;
+      block->next = ptr;
+
+      if(ptr == flist){
+        flist = block;
+      }
+      return;
+    }
+    prevPtr = ptr;
+    ptr = ptr->next;
+  }
+
+  block->next = NULL;
+  prevPtr->next = block;
+  block->prev = prevPtr;
+}
+
+/**
 * Adjust the request so it is bigger than MIN (8)
 * and also a multiple of 8.
 */
@@ -169,7 +186,7 @@ struct head *find(int size){
       if(next->size >= LIMIT(size)){//(HEAD + MIN(0) + size)){ //if able to split
         struct head *block = split(next, size);
         struct head *bef = before(block);
-        insert(bef);
+        insert_order(bef);//insert(bef);
         struct head *aft = after(block);
         aft->bfree = FALSE;
         block->free = FALSE;
@@ -185,6 +202,45 @@ struct head *find(int size){
     }
   }
   return NULL; //no block found
+}
+
+/**
+* Called when a block is merged in flist to set it in its right position,
+* i.e float up probably.
+*/
+void float_up(struct head *block){
+  struct head *next = block->next;
+  if(next == NULL){
+    return;
+  }
+  if(block->size <= next->size){ //remove?
+    return;
+  }
+
+  /*float is needed*/
+
+  detach(block);
+
+  struct head *nextPrev = next->prev;
+  while((next != NULL)){
+    if(block->size <= next->size){
+      if(nextPrev != NULL){
+        nextPrev->next = block;
+      }
+      next->prev = block;
+      block->next = next;
+      block->prev = nextPrev;
+      if(next == flist){ //not needed maybe?
+        flist = block;
+      }
+      return;
+    }
+    nextPrev = next;
+    next = next->next;
+  }
+  block->next = NULL;
+  nextPrev->next = block;
+  block->prev = nextPrev;
 }
 
 /**
@@ -212,12 +268,13 @@ struct head *merge(struct head *block){
 
 /**
 * Merges the block if possible without detach & insert
-* to flist.
+* to flist. It can also float the merged block to keep the flist
+* ordered.
 */
 struct head *merge_no_detach(struct head *block){
   struct head *aft = after(block);
 
-  if(block->bfree){ //merge this mf
+  if(block->bfree){
     struct head *bef = before(block);
     bef->size = bef->size + block->size + HEAD;
     aft->bsize = bef->size;
@@ -234,7 +291,7 @@ struct head *merge_no_detach(struct head *block){
       aft->bsize = block->size;
       aft->bfree = block->free;
     }
-
+    float_up(block); // keep flist ordered
     return NULL;
   }
   //only block after is free
@@ -257,6 +314,7 @@ struct head *merge_no_detach(struct head *block){
     aft = after(block);
     aft->bsize = block->size;
     aft->bfree = block->free;
+    float_up(block); // keep flist ordered
     return NULL;
   }
 
@@ -275,7 +333,7 @@ void *palloc(size_t request){
   if(taken == NULL){
     return NULL;
   } else {
-    return HIDE(taken);//(struct head*)((char *) taken + HEAD);
+    return HIDE(taken);
   }
 }
 
@@ -284,11 +342,22 @@ void *palloc(size_t request){
 */
 void pree(void *memory){
   if(memory != NULL){
-    struct head *block = MAGIC(memory);//(struct head*)((char *) memory - HEAD);
+    struct head *block = MAGIC(memory);
     block = merge_no_detach(block);//merge(block);
 
-    //sink/heap??? change insert also, split will be fixed:)
-    //or sink for split?
+    // Uncomment this and comment rest below to
+    // just only insert...
+    /*
+    struct head *aft = after(block);
+    block->free = TRUE;
+    aft->bfree = TRUE;
+    insert(block);
+    */
+
+    //maybe add sink function when splitting? ;)
+
+    // Uncomment this and comment rest below to
+    // merge without "detach" (insert rly)
 
     if(block == NULL){
       //merged into flist already, no need to do more...
@@ -296,10 +365,11 @@ void pree(void *memory){
       block->free = TRUE;
       struct head *aft = after(block);
       aft->bfree = TRUE;
-      insert(block);
+      insert_order(block);//insert(block);
     }
 
-    //For the first merge...
+
+    // Uncomment this for merge with always detach & insert
     /*
     struct head *aft = after(block);
     block->free = TRUE;
@@ -348,6 +418,22 @@ void sanity(){
     prev = next;
     next = next->next;
   }
+
+  // Comment this if order does not matter
+  printf("Checking flist order...\n");
+  next = flist;
+  prev = next;
+  while(next != NULL){
+    if(prev->size > next->size){
+      printf("Wrong order in flist: prev is bigger than next!\n");
+      printf("prev: %d\tnext: %d\n", prev->size, next->size);
+      printf("Terminating sanity\n");
+      exit(1);
+    }
+    prev = next;
+    next = next->next;
+  }
+  printf("flist order OK!\n");
   printf("flist OK!\n");
 
   unsigned int tot = ARENA;
@@ -406,15 +492,14 @@ void sanity(){
   printf("Sanity passed!\n");
 }
 
-void printCountLengthOfFlist(int bufferSize){
+void printCountLengthOfFlist(int numOfAllocs){
   int count = 0;
   struct head *next = flist;
   while(next != NULL){
     count++;
     next = next->next;
   }
-  printf("%d\t%d\n", bufferSize, count);
-  //printf("Size: %d\n", count);
+  printf("%d\t%d\n", numOfAllocs, count);
 }
 
 void printSizeDistributionOfFlist(int buffSize){
@@ -425,6 +510,20 @@ void printSizeDistributionOfFlist(int buffSize){
     next = next->next;
     count++;
   }
+}
+
+void printAverageSizeDistributionOfFlist(){
+  struct head *next = flist;
+  int sum = 0;
+  int length = 0;
+  while(next != NULL){
+    length++;
+    sum+=next->size;
+    next = next->next;
+  }
+
+  double average = (double) sum / length;
+  printf("%f\t%d\n", average, length);
 }
 
 

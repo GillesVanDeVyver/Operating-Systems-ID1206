@@ -3,5 +3,5 @@ void pree(void *memory);
 void init();
 void terminate();
 void sanity();
-void printCountLengthOfFlist(int bufferSize);
-void printSizeDistributionOfFlist(int bufferSize);
+void printCountLengthOfFlist(int numOfAllocs);
+void printAverageSizeDistributionOfFlist();
