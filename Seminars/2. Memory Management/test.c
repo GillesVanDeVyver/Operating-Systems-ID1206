@@ -50,7 +50,7 @@ void evalFlistDistr(int allocs){
   printf("# Checking distribution of the block sizes in flist\n# Average\tflistLength\n");
   init();
   runAllocs(allocs);
-//  printAverageSizeDistributionOfFlist();
+  //printAverageSizeDistributionOfFlist();
   terminate();
 }
 
@@ -97,7 +97,7 @@ int main(int argc, char const *argv[]){
   
   
 evalTimePerformance(atoi(argv[1]));
-//evalFlistLength(atoi(argv[1]));
+ // evalFlistLength(atoi(argv[1]));
 
   /*if(argc < 2){
     printf("Please enter:\tNumberOfAllocs\n");
