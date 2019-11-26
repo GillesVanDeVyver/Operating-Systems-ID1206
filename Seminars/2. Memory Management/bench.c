@@ -85,12 +85,12 @@ int main(int argc, char const *argv[]) {
 
   int allocs = atoi(argv[1]);
   BenchmarkPalloc(allocs);
-  sleep(1);
+  //sleep(1);
   checkFreeListLength(allocs);
-  sleep(1);
+  //sleep(1);
   checkFreeListDist(allocs);
-  sleep(1);
-  testSanity(allocs);
+  //sleep(0.1);
+  //testSanity(allocs);
 
   return 0;
 }
