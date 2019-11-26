@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
-#include "dlmall.h"
+#include "ordered_dlmall.h"
 #include "rand.h"
 
 #define BUFFER 100 
