@@ -322,9 +322,9 @@ struct head *merge_no_detach(struct head *block){
 }
 
 /**
-* Tries to palloc memory of the given size.
+* Tries to dalloc memory of the given size.
 */
-void *palloc(size_t request){
+void *dalloc(size_t request){
   if(request <= 0){
     return NULL;
   }
@@ -338,9 +338,9 @@ void *palloc(size_t request){
 }
 
 /**
-* Prees the given memory block.
+* frees the given memory block.
 */
-void pree(void *memory){
+void dfree(void *memory){
   if(memory != NULL){
     struct head *block = MAGIC(memory);
     block = merge_no_detach(block);//merge(block);

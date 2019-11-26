@@ -4,8 +4,8 @@
 #include "ptmall.h"
 #include "rand.h"
 
-#define BUFFER 100 //how many blocks we can hold at a given time
-#define MAX_SIZE 100 // max block size request
+#define BUFFER 100 
+#define MAX_SIZE 100 
 
 void runAllocs(int allocs){
   void *buffer[BUFFER];
@@ -16,12 +16,12 @@ void runAllocs(int allocs){
   for(int i = 0; i < allocs; i++){
     int index = rand() % BUFFER;
     if(buffer[index] != NULL){
-      pree(buffer[index]);
+      dfree(buffer[index]);
     }
 
     size_t size = (size_t)request(MAX_SIZE);
     int *memory;
-    memory = palloc(size);
+    memory = dalloc(size);
 
     if(memory == NULL){
       fprintf(stderr, "palloc failed\n");
@@ -33,7 +33,7 @@ void runAllocs(int allocs){
   }
 }
 
-void evalFlistLength(int allocs){
+void checkFreeListLength(int allocs){
   printf("# Checking length of flist\n# Allocs\tflistLength\n");
   int sum, average = 0;
   for(int i = BUFFER; i < allocs+1; i+= 10){
@@ -46,7 +46,7 @@ void evalFlistLength(int allocs){
   printf("Average length of free list is: %d \n", average);
 }
 
-void evalFlistDistr(int allocs){
+void checkFreeListDist(int allocs){
   printf("# Checking distribution of the block sizes in flist\n# Average\tflistLength\n");
   init();
   runAllocs(allocs);
@@ -54,61 +54,43 @@ void evalFlistDistr(int allocs){
   terminate();
 }
 
-void evalTimePerformance(int allocs){
+void BenchmarkPalloc(int allocs){
   printf("# Evaluation of time performance\n# Allocs\tTime(ms)\n");
   clock_t time_start, time_stop;
   double timeAlloc = 0;
-  for(int i = BUFFER; i < allocs; i+= 10){
+  for(int i = BUFFER; i < allocs+1; i+= 10){
     init();
     time_start = clock();
     runAllocs(i);
     time_stop = clock();
     terminate();
     timeAlloc = ((double)(time_stop - time_start)) / ((double)CLOCKS_PER_SEC/1000);
-    printf("%d\t%f\n", i, timeAlloc);
+    printf("%d\t%f ms\n", i, timeAlloc);
   }
+}
+
+void testSanity(int allocs){
   init();
-  time_start = clock();
   runAllocs(allocs);
-  time_stop = clock();
-  terminate();
-  timeAlloc = ((double)(time_stop - time_start)) / ((double)CLOCKS_PER_SEC/1000);
-  printf("%d\t%f\n", allocs, timeAlloc);
-}
-
-void testSanity(){
-  init();
-  runAllocs(1000);
   sanity();
   terminate();
 }
 
-void simpleTest(){
-  init();
-  int *mem = palloc(80);
-  int *mom = palloc(1000);
-  pree(mem);
-  pree(mom);
-  sanity();
-  terminate();
-}
+int main(int argc, char const *argv[]) {
 
-int main(int argc, char const *argv[]){
-  
-  
-evalTimePerformance(atoi(argv[1]));
- // evalFlistLength(atoi(argv[1]));
-
-  /*if(argc < 2){
+  if(argc < 2){
     printf("Please enter:\tNumberOfAllocs\n");
     exit(1);
   }
+
   int allocs = atoi(argv[1]);
-  srand(time(0));
-  //evalFlistLength(allocs);
-  evalFlistDistr(allocs);*/
-  //evalTimePerformance(allocs);
-  //testSanity();
-  //simpleTest();
+  BenchmarkPalloc(allocs);
+  sleep(1);
+  checkFreeListLength(allocs);
+  sleep(1);
+  checkFreeListDist(allocs);
+  sleep(1);
+  testSanity(allocs);
+
   return 0;
 }

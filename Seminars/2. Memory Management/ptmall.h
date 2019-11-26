@@ -1,5 +1,5 @@
-void *palloc(size_t request);
-void pree(void *memory);
+void *dalloc(size_t request);
+void dfree(void *memory);
 void init();
 void terminate();
 void sanity();
