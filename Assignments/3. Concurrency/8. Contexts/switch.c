@@ -4,7 +4,7 @@
 
 int main () {
 
-    int done = 0;
+    register int done = 0;
     ucontext_t one;
     ucontext_t two;
 
