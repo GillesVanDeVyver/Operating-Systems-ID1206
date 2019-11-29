@@ -1,7 +1,7 @@
 #define COLUMNS 80
 #define ROWS 25
 
-char *name = "Rifat Kazi";
+char *name = "Emils os running";
 
 typedef struct vga_char {
 
