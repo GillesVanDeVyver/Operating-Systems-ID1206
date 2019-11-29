@@ -1,14 +1,14 @@
-bits 32
-global start
-section .text
+section .multiboot_header
 
-start:
-	mov dword [0xB8000], 0x024B014F
-	mov dword [0xB8004], 0x024B024F
-	mov dword [0xB8008], 0x054B064F
-	mov dword [0xB800c], 0x074B084F
-	mov dword [0xB8010], 0x094B0A4F
-	mov dword [0xB8014], 0x0B4B0C4F
-	mov dword [0xB8018], 0x0D4B0E4F
-	mov dword [0xB8000], 0x0F4B2F4F
-	hlt
+magic 	equ 0xE85250D6		; multibood 2
+arch	equ 0				; protected mode i 386
+
+header_start:
+		dd magic						; magic number
+		dd arch							; architecture
+		dd header_end - header_start 	; header length
+		dd 0x100000000 - (magic + arch + (header_end - header_start))
+		dw 0							; type
+		dw 0							; flags
+		dd 8							; size
+		header_end:

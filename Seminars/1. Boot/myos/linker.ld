@@ -1,25 +1,22 @@
 ENTRY(start)
 
 SECTIONS {
-  . = 1M;
+	. = 1M;
 
-  .boot :
-  {
-    *(.multiboot_header)
-  }
+	.boot :
+	{
+		*(.multiboot_header)
+	}
 
-  .text :
-  {
-    *(.text)
-  }
+	.text :
+	{
+		*(.text)
+	}
 
-  .data :
-  {
-    *(.data)
-  }
-
-  .bss :
-  {
-    *(.bss)
-  }
+	.data : {
+		*(.data)
+		}
+	.bss : {
+		*(.bss)
+		}
 }
