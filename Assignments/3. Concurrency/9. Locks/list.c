@@ -76,7 +76,7 @@ int main(int argc, char *argv[]){
 
   struct timespec t_start, t_stop;
 
-  printf("%d threads doing %d operations each\n", n, inc);
+  printf("list: %d threads doing %d operations each\n", n, inc);
 
   pthread_mutex_init(&mutex, NULL);
 
