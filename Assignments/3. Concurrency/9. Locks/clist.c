@@ -80,12 +80,11 @@ int main(int argc, char *argv[]){
   int n = atoi(argv[2]);
   int inc = (atoi(argv[1]) / n);
 
-  printf("%d threads doing %d operations each\n", n, inc);
-
   struct timespec t_start, t_stop;
 
+  printf("%d threads doing %d operations each\n", n, inc);
+
   args *thra = malloc(n * sizeof(args));
-  clock_gettime(CLOCK_MONOTONIC_COARSE, &t_start);
   for(int i = 0; i < n; i++){
     thra[i].inc = inc;
     thra[i].id = i;
@@ -93,6 +92,7 @@ int main(int argc, char *argv[]){
   }
 
   pthread_t *thrt = malloc(n * sizeof(pthread_t));
+  clock_gettime(CLOCK_MONOTONIC_COARSE, &t_start);
   for(int i = 0; i < n; i++){
     pthread_create(&thrt[i], NULL, bench, &thra[i]);
   }
@@ -101,11 +101,10 @@ int main(int argc, char *argv[]){
     pthread_join(thrt[i], NULL);
   }
   clock_gettime(CLOCK_MONOTONIC_COARSE, &t_stop);
-
   long wall_sec = t_stop.tv_sec - t_start.tv_sec;
   long wall_nsec = t_stop.tv_nsec - t_start.tv_nsec;
-  long wall_msec = t_stop.tv_msec - t_start.tv_msec;
+  long wall_msec = (wall_sec * 1000) + (wall_nsec / 1000000);
 
-  printf("done in %ld ms \n", wall_msec);
+  printf("done in %ld ms\n", wall_msec);
   return 0;
 }
