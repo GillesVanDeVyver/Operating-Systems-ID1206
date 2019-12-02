@@ -100,7 +100,7 @@ int main(int argc, char *argv[]){
 
   struct timespec t_start, t_stop;
 
-  printf("%d threads doing %d operations each\n", n, inc);
+  printf("slist: %d threads doing %d operations each\n", n, inc);
 
   args *thra = malloc(n * sizeof(args));
   for(int i = 0; i < n; i++){
