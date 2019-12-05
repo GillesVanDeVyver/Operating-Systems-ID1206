@@ -20,3 +20,13 @@ typedef struct green_cond_t
     green_t *queue; //Uses the next pointers for linked list
 } green_cond_t;
 
+typedef struct green_mutex_t
+{
+    volatile int taken;
+    struct green_t *susp;
+} green_mutex_t;
+
+int green_mutex_init(green_mutex_t *mutex);
+int green_mutex_lock(green_mutex_t *mutex);
+int green_mutex_unlock(green_mutex_t *mutex);
+

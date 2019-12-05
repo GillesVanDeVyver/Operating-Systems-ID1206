@@ -166,6 +166,46 @@ int green_join(green_t *thread)
     return 0;
 }
 
+int green_mutex_int(green_mutex_t *mutex)
+{
+    mutex->taken = FALSE;
+    mutex->susp = NULL;
+    return 0;
+}
+
+int green_mutex_lock(green_mutex_t *mutex)
+{
+
+    sigprocmask(SIG_BLOCK, &block, NULL);
+
+    green_t *susp = running;
+
+    // Unlock moves all suspended threads to rdy Q, so here we just
+    // check lock, and add us back to suspended queue and yield
+    // All threads unblock first thing, so this should work
+
+    while (mutex->taken)
+    {
+        add_to_queue(&mutex->susp, susp);
+        set_next_running();
+        swapcontext(susp->context, running->context);
+    }
+
+    mutex->taken = TRUE;
+    sigprocmask(SIG_UNBLOCK, &block, NULL);
+    return 0;
+}
+
+int green_mutex_unlock(green_mutex_t *mutex)
+{
+    sigprocmask(SIG_BLOCK, &block, NULL);
+    add_to_ready_queue(mutex->susp);
+    mutex->susp = NULL;
+    mutex->taken = FALSE;
+    sigprocmask(SIG_UNBLOCK, &block, NULL);
+    return 0;
+}
+
 void set_next_running()
 {
 
