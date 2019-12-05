@@ -14,3 +14,9 @@ typedef struct green_t
 int green_create(green_t *thread, void *(*fun)(void *), void *arg);
 int green_yield();
 int green_join(green_t *thread, void **val);
+
+typedef struct green_cond_t
+{
+    green_t *queue; //Uses the next pointers for linked list
+} green_cond_t;
+
