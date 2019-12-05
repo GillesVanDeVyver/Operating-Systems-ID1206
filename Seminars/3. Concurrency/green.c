@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdlib.h>
 #include <ucontext.h>
 #include <assert.h>
 #include <signal.h>
@@ -20,6 +21,12 @@ static green_t *running = &main_green;
 static void init() __attribute__((constructor));
 
 void timer_handler(int sig);
+void green_thread();
+void add_to_ready_queue(green_t *thread);
+void set_next_running();
+void add_to_queue(green_t **, green_t *thread_to_add);
+green_t *pop_from_queue(green_t **queue);
+int queue_length(green_t *queue);
 
 void init()
 {
@@ -67,28 +74,12 @@ int green_create(green_t *new, void *(*fun)(void *), void *arg)
     new->join = NULL;
     new->zombie = FALSE;
 
+    //add new to the ready queue
+    sigprocmask(SIG_BLOCK, &block, NULL);
     add_to_ready_queue(new);
-}
+    sigprocmask(SIG_UNBLOCK, &block, NULL);
 
-void add_to_ready_queue(green_t *ready)
-{
-    add_to_queue(&running, ready);
-}
-
-void add_to_queue(green_t **queue, green_t *thread_to_add)
-{
-    green_t *current = queue;
-    if (current == NULL)
-    {
-        *queue = thread_to_add;
-    }
-    else
-    {
-        while (current->next != NULL)
-            current = current->next;
-
-        current = thread_to_add;
-    }
+    return 0;
 }
 
 void green_thread()
@@ -269,6 +260,27 @@ green_t *pop_from_queue(green_t **queue)
         popped->next = NULL;
     }
     return popped;
+}
+
+void add_to_ready_queue(green_t *ready)
+{
+    add_to_queue(&running, ready);
+}
+
+void add_to_queue(green_t **queue, green_t *thread_to_add)
+{
+    green_t *current = queue;
+    if (current == NULL)
+    {
+        *queue = thread_to_add;
+    }
+    else
+    {
+        while (current->next != NULL)
+            current = current->next;
+
+        current = thread_to_add;
+    }
 }
 
 //For debugging
