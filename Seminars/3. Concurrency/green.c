@@ -1,12 +1,16 @@
 #include <stdlib.h>
 #include <ucontext.h>
 #include <assert.h>
+#include <signal.h>
+#include <sys/time.h>
 #include "green.h"
 
+#define PERIOD 100
 #define FALSE 0
 #define TRUE 1
-
 #define STACK_SIZE 4096
+
+static sigset_t block;
 
 static ucontext_t main_cntx = {0};
 static green_t main_green = {&main_cntx, NULL, NULL, NULL, NULL, FALSE};
@@ -15,9 +19,33 @@ static green_t *running = &main_green;
 
 static void init() __attribute__((constructor));
 
+void timer_handler(int sig);
+
 void init()
 {
+    sigemptyset(&block);
+    sigaddset(&block, SIGVTALRM);
+
+    struct sigaction act = {0};
+    struct timeval interval;
+    struct itimerval period;
+
+    act.sa_handler = timer_handler;
+    assert(sigaction(SIGVTALRM, &act, NULL) == 0);
+
+    interval.tv_sec = 0;
+    interval.tv_usec = PERIOD;
+    period.it_interval = interval;
+    period.it_value = interval;
+    setitimer(ITIMER_VIRTUAL, &period, NULL);
+
     getcontext(&main_cntx);
+}
+
+void timer_handler(int sig)
+{
+    //printf("TIMER INTERRUPT\n");
+    green_yield();
 }
 
 int green_create(green_t *new, void *(*fun)(void *), void *arg)
