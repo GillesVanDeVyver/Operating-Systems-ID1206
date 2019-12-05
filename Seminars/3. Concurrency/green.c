@@ -166,7 +166,52 @@ int green_join(green_t *thread)
     return 0;
 }
 
-int green_mutex_int(green_mutex_t *mutex)
+void green_cond_init(green_cond_t *cond)
+{
+    cond->queue = NULL;
+}
+
+void green_cond_wait(green_cond_t *cond, green_mutex_t *mutex)
+{
+
+    sigprocmask(SIG_BLOCK, &block, NULL);
+    add_to_queue(&(mutex->susp), running);
+
+    if (mutex != NULL)
+    { //Release lock before waiting
+
+        add_to_ready_queue(mutex->susp); //Adds all suspended to ready queue
+        mutex->susp = NULL;
+        mutex->taken = FALSE;
+    }
+
+    green_t *susp = running;
+    set_next_running();
+    swapcontext(susp->context, running->context);
+
+    if (mutex != NULL)
+    {
+
+        while (mutex->taken)
+        {
+            add_to_queue(&mutex->susp, susp);
+            set_next_running();
+            swapcontext(susp->context, running->context);
+        }
+        mutex->taken = TRUE;
+    }
+    sigprocmask(SIG_UNBLOCK, &block, NULL);
+}
+
+void green_cond_signal(green_cond_t *cond)
+{
+    sigprocmask(SIG_BLOCK, &block, NULL);
+    green_t *signalled = pop_from_queue(&cond->queue);
+    add_to_ready_queue(signalled);
+    sigprocmask(SIG_UNBLOCK, &block, NULL);
+}
+
+int green_mutex_init(green_mutex_t *mutex)
 {
     mutex->taken = FALSE;
     mutex->susp = NULL;
