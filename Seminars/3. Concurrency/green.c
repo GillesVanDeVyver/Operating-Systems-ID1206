@@ -56,31 +56,29 @@ void timer_handler(int sig)
     green_yield();
 }
 
-int green_create(green_t *new, void *(*fun)(void *), void *arg)
-{
+int green_create(green_t* new, void* (*fun)(void*), void* arg) {
+  ucontext_t* cntx = (ucontext_t*) malloc(sizeof(ucontext_t));
+  getcontext(cntx);
 
-    ucontext_t *cntx = (ucontext_t *)malloc(sizeof(ucontext_t));
-    getcontext(cntx);
+  void* stack = malloc(STACK_SIZE);
 
-    void *stack = malloc(STACK_SIZE);
+  cntx->uc_stack.ss_sp = stack;
+  cntx->uc_stack.ss_size = STACK_SIZE;
 
-    cntx->uc_stack.ss_sp = stack;
-    cntx->uc_stack.ss_size = STACK_SIZE;
-    makecontext(cntx, green_thread, 0);
+  makecontext(cntx, green_thread, 0);
+  new->context = cntx;
+  new->fun = fun;
+  new->arg = arg;
+  new->next = NULL;
+  new->join = NULL;
+  new->zombie = FALSE;
 
-    new->context = cntx;
-    new->fun = fun;
-    new->arg = NULL;
-    new->next = NULL;
-    new->join = NULL;
-    new->zombie = FALSE;
+  // add new to the ready queue
+  sigprocmask(SIG_BLOCK, &block, NULL);
+  add_to_ready_queue(new);
+  sigprocmask(SIG_UNBLOCK, &block, NULL);
 
-    //add new to the ready queue
-    sigprocmask(SIG_BLOCK, &block, NULL);
-    add_to_ready_queue(new);
-    sigprocmask(SIG_UNBLOCK, &block, NULL);
-
-    return 0;
+  return 0;
 }
 
 void green_thread()
