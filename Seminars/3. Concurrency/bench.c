@@ -47,7 +47,7 @@ void produceP()
     {
         pthread_mutex_lock(&mutexP);
         while (buffer == 1) //wait for consumer before producing more
-            pthread_cond_wait(&empty, &mutex);
+            pthread_cond_wait(&emptyP, &mutexP);
         buffer = 1;
         //printf("Produced!\n");
         green_cond_signal(&fullP);
