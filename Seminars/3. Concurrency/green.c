@@ -75,9 +75,9 @@ int green_create(green_t *new, void *(*fun)(void *), void *arg)
     new->zombie = FALSE;
 
     //add new to the ready queue
-    sigprocmask(SIG_BLOCK, &block, NULL);
+    //sigprocmask(SIG_BLOCK, &block, NULL);
     add_to_ready_queue(new);
-    sigprocmask(SIG_UNBLOCK, &block, NULL);
+    //sigprocmask(SIG_UNBLOCK, &block, NULL);
 
     return 0;
 }
@@ -85,13 +85,13 @@ int green_create(green_t *new, void *(*fun)(void *), void *arg)
 void green_thread()
 {
 
-    sigprocmask(SIG_UNBLOCK, &block, NULL);
+    //sigprocmask(SIG_UNBLOCK, &block, NULL);
 
     green_t *this = running;
 
     (*this->fun)(this->arg);
 
-    sigprocmask(SIG_BLOCK, &block, NULL);
+    //sigprocmask(SIG_BLOCK, &block, NULL);
 
     //add joining thread to ready queue
 
@@ -114,7 +114,7 @@ void green_thread()
 
 int green_yield()
 {
-    sigprocmask(SIG_BLOCK, &block, NULL);
+    //sigprocmask(SIG_BLOCK, &block, NULL);
 
     green_t *susp = running;
 
@@ -125,7 +125,7 @@ int green_yield()
 
     set_next_running();
     swapcontext(susp->context, running->context);
-    sigprocmask(SIG_UNBLOCK, &block, NULL);
+    //sigprocmask(SIG_UNBLOCK, &block, NULL);
 
     return 0;
 }
@@ -137,7 +137,7 @@ int green_join(green_t *thread)
         return 0;
 
     green_t *susp = running;
-    sigprocmask(SIG_BLOCK, &block, NULL);
+    //sigprocmask(SIG_BLOCK, &block, NULL);
     //add to waiting threads
     if (thread->join == NULL)
         thread->join = susp; // If no thread joining, just put it in join field
@@ -153,7 +153,7 @@ int green_join(green_t *thread)
     set_next_running();
 
     swapcontext(susp->context, running->context);
-    sigprocmask(SIG_UNBLOCK, &block, NULL);
+    //sigprocmask(SIG_UNBLOCK, &block, NULL);
     return 0;
 }
 
@@ -165,7 +165,7 @@ void green_cond_init(green_cond_t *cond)
 void green_cond_wait(green_cond_t *cond, green_mutex_t *mutex)
 {
 
-    sigprocmask(SIG_BLOCK, &block, NULL);
+    //sigprocmask(SIG_BLOCK, &block, NULL);
     add_to_queue(&(mutex->susp), running);
 
     if (mutex != NULL)
@@ -191,15 +191,15 @@ void green_cond_wait(green_cond_t *cond, green_mutex_t *mutex)
         }
         mutex->taken = TRUE;
     }
-    sigprocmask(SIG_UNBLOCK, &block, NULL);
+    //sigprocmask(SIG_UNBLOCK, &block, NULL);
 }
 
 void green_cond_signal(green_cond_t *cond)
 {
-    sigprocmask(SIG_BLOCK, &block, NULL);
+    //sigprocmask(SIG_BLOCK, &block, NULL);
     green_t *signalled = pop_from_queue(&cond->queue);
     add_to_ready_queue(signalled);
-    sigprocmask(SIG_UNBLOCK, &block, NULL);
+    //sigprocmask(SIG_UNBLOCK, &block, NULL);
 }
 
 int green_mutex_init(green_mutex_t *mutex)
@@ -212,7 +212,7 @@ int green_mutex_init(green_mutex_t *mutex)
 int green_mutex_lock(green_mutex_t *mutex)
 {
 
-    sigprocmask(SIG_BLOCK, &block, NULL);
+    //sigprocmask(SIG_BLOCK, &block, NULL);
 
     green_t *susp = running;
 
@@ -228,17 +228,17 @@ int green_mutex_lock(green_mutex_t *mutex)
     }
 
     mutex->taken = TRUE;
-    sigprocmask(SIG_UNBLOCK, &block, NULL);
+    //sigprocmask(SIG_UNBLOCK, &block, NULL);
     return 0;
 }
 
 int green_mutex_unlock(green_mutex_t *mutex)
 {
-    sigprocmask(SIG_BLOCK, &block, NULL);
+    //sigprocmask(SIG_BLOCK, &block, NULL);
     add_to_ready_queue(mutex->susp);
     mutex->susp = NULL;
     mutex->taken = FALSE;
-    sigprocmask(SIG_UNBLOCK, &block, NULL);
+    //sigprocmask(SIG_UNBLOCK, &block, NULL);
     return 0;
 }
 
