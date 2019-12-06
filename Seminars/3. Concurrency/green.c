@@ -270,7 +270,7 @@ void add_to_ready_queue(green_t *ready)
 
 void add_to_queue(green_t **queue, green_t *thread_to_add)
 {
-    green_t *current = queue;
+    green_t *current = *queue;
     if (current == NULL)
     {
         *queue = thread_to_add;
