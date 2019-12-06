@@ -161,7 +161,7 @@ void green_cond_wait(green_cond_t *cond, green_mutex_t *mutex)
 {
 
     sigprocmask(SIG_BLOCK, &block, NULL);
-    add_to_queue(&(mutex->susp), running);
+    add_to_queue(&(cond->susp), running);
 
     if (mutex != NULL)
     { //Release lock before waiting
