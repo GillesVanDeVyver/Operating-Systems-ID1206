@@ -50,8 +50,8 @@ void produceP()
             pthread_cond_wait(&emptyP, &mutexP);
         buffer = 1;
         //printf("Produced!\n");
-        pthread_cond_signal(&fullP);
-        pthread_mutex_unlock(&mutexP);
+        green_cond_signal(&fullP);
+        green_mutex_unlock(&mutexP);
     }
 }
 
@@ -60,13 +60,13 @@ void consumeP()
 
     for (int i = 0; i < productions / (numThreads / 2); i++)
     {
-        pthread_mutex_lock(&mutexP);
+        pthread_mutex_lock(&mutex);
         while (buffer == 0) //wait for producer before consuming
-            pthread_cond_wait(&emptyP, &mutexP);
+            green_cond_wait(&empty, &mutex);
         buffer = 0;
         //printf("Consumed!\n");
-        pthread_cond_signal(&emptyP);
-        pthread_mutex_unlock(&mutexP);
+        green_cond_signal(&emptyP);
+        green_mutex_unlock(&mutexP);
     }
 }
 
@@ -118,7 +118,7 @@ void testPthread(int *args)
         pthread_create(&threads[i], NULL, testConsumerProducerP, &args[i]);
 
     for (int i = 0; i < numThreads; i++)
-        pthread_join(threads[i], NULL);
+        pthread_join(&threads[i], NULL);
 }
 
 int main() {
@@ -132,7 +132,7 @@ int main() {
 
     pthread_cond_init(&fullP, NULL);
     pthread_cond_init(&emptyP, NULL);
-    pthread_mutex_init(&mutexP, NULL);
+    pthread_cond_init(&mutexP, NULL);
 
     printf("#Benchmark, creating and producing/consuming with threads!\n#\n#\n");
     printf("#{#productions\ttimeGreen(ms)\ttimePthread(ms)}\n");
