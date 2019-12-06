@@ -24,7 +24,7 @@ typedef struct green_mutex_t
 
 int green_create(green_t *thread, void *(*fun)(void *), void *arg);
 int green_yield();
-int green_join(green_t *thread, void **val);
+int green_join(green_t *thread);
 
 int green_mutex_init(green_mutex_t *mutex);
 int green_mutex_lock(green_mutex_t *mutex);
