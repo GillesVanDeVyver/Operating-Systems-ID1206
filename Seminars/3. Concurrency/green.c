@@ -1,3 +1,4 @@
+//Author Emil Ståhl
 #include <stdio.h>
 #include <stdlib.h>
 #include <ucontext.h>
@@ -24,30 +25,30 @@ void timer_handler(int sig);
 void green_thread();
 void add_to_ready_queue(green_t *thread);
 void set_next_running();
-void add_to_queue(green_t **, green_t *thread_to_add);
+void add_to_queue(green_t **queue, green_t *thread_to_add);
 green_t *pop_from_queue(green_t **queue);
 int queue_length(green_t *queue);
 
-void init()
-{
-    sigemptyset(&block);
-    sigaddset(&block, SIGVTALRM);
+void init() {
+  sigemptyset(&block);
+  sigaddset(&block, SIGVTALRM);
 
-    struct sigaction act = {0};
-    struct timeval interval;
-    struct itimerval period;
+  struct sigaction act = {0};
+  struct timeval interval;
+  struct itimerval period;
 
-    act.sa_handler = timer_handler;
-    assert(sigaction(SIGVTALRM, &act, NULL) == 0);
+  act.sa_handler = timer_handler;
+  assert(sigaction(SIGVTALRM, &act, NULL) == 0);
 
-    interval.tv_sec = 0;
-    interval.tv_usec = PERIOD;
-    period.it_interval = interval;
-    period.it_value = interval;
-    setitimer(ITIMER_VIRTUAL, &period, NULL);
+  interval.tv_sec = 0;
+  interval.tv_usec = PERIOD;
+  period.it_interval = interval;
+  period.it_value = interval;
+  setitimer(ITIMER_VIRTUAL, &period, NULL);
 
-    getcontext(&main_cntx);
+  getcontext(&main_cntx);
 }
+
 
 void timer_handler(int sig)
 {
