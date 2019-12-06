@@ -22,8 +22,8 @@ int main() {
     green_create(&g0, test, &a0);
     green_create(&g1, test, &a1);
 
-    green_join(&g0, NULL);
-    green_join(&g1, NULL);
+    green_join(&g0);
+    green_join(&g1);
 
     printf("done\n");
 
