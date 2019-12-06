@@ -1,3 +1,4 @@
+//Author Emil Ståhl
 #include <stdio.h>
 #include <stdlib.h>
 #include <ucontext.h>
@@ -24,30 +25,30 @@ void timer_handler(int sig);
 void green_thread();
 void add_to_ready_queue(green_t *thread);
 void set_next_running();
-void add_to_queue(green_t **, green_t *thread_to_add);
+void add_to_queue(green_t **queue, green_t *thread_to_add);
 green_t *pop_from_queue(green_t **queue);
 int queue_length(green_t *queue);
 
-void init()
-{
-    sigemptyset(&block);
-    sigaddset(&block, SIGVTALRM);
+void init() {
+  sigemptyset(&block);
+  sigaddset(&block, SIGVTALRM);
 
-    struct sigaction act = {0};
-    struct timeval interval;
-    struct itimerval period;
+  struct sigaction act = {0};
+  struct timeval interval;
+  struct itimerval period;
 
-    act.sa_handler = timer_handler;
-    assert(sigaction(SIGVTALRM, &act, NULL) == 0);
+  act.sa_handler = timer_handler;
+  assert(sigaction(SIGVTALRM, &act, NULL) == 0);
 
-    interval.tv_sec = 0;
-    interval.tv_usec = PERIOD;
-    period.it_interval = interval;
-    period.it_value = interval;
-    setitimer(ITIMER_VIRTUAL, &period, NULL);
+  interval.tv_sec = 0;
+  interval.tv_usec = PERIOD;
+  period.it_interval = interval;
+  period.it_value = interval;
+  setitimer(ITIMER_VIRTUAL, &period, NULL);
 
-    getcontext(&main_cntx);
+  getcontext(&main_cntx);
 }
+
 
 void timer_handler(int sig)
 {
@@ -55,61 +56,57 @@ void timer_handler(int sig)
     green_yield();
 }
 
-int green_create(green_t *new, void *(*fun)(void *), void *arg)
-{
+int green_create(green_t* new, void* (*fun)(void*), void* arg) {
+  ucontext_t* cntx = (ucontext_t*) malloc(sizeof(ucontext_t));
+  getcontext(cntx);
 
-    ucontext_t *cntx = (ucontext_t *)malloc(sizeof(ucontext_t));
-    getcontext(cntx);
+  void* stack = malloc(STACK_SIZE);
 
-    void *stack = malloc(STACK_SIZE);
+  cntx->uc_stack.ss_sp = stack;
+  cntx->uc_stack.ss_size = STACK_SIZE;
 
-    cntx->uc_stack.ss_sp = stack;
-    cntx->uc_stack.ss_size = STACK_SIZE;
-    makecontext(cntx, green_thread, 0);
+  makecontext(cntx, green_thread, 0);
+  new->context = cntx;
+  new->fun = fun;
+  new->arg = arg;
+  new->next = NULL;
+  new->join = NULL;
+  new->zombie = FALSE;
 
-    new->context = cntx;
-    new->fun = fun;
-    new->arg = NULL;
-    new->next = NULL;
-    new->join = NULL;
-    new->zombie = FALSE;
+  // add new to the ready queue
+  sigprocmask(SIG_BLOCK, &block, NULL);
+  add_to_ready_queue(new);
+  sigprocmask(SIG_UNBLOCK, &block, NULL);
 
-    //add new to the ready queue
-    sigprocmask(SIG_BLOCK, &block, NULL);
-    add_to_ready_queue(new);
-    sigprocmask(SIG_UNBLOCK, &block, NULL);
-
-    return 0;
+  return 0;
 }
 
-void green_thread()
-{
 
-    sigprocmask(SIG_UNBLOCK, &block, NULL);
+void green_thread() {
+  sigprocmask(SIG_UNBLOCK, &block, NULL);
+  green_t* this = running;
 
-    green_t *this = running;
+  // The actual workload of the thread
+  (*this->fun)(this->arg);
+  // Thread workload done, clean up
 
-    (*this->fun)(this->arg);
+  sigprocmask(SIG_BLOCK, &block, NULL);
+  // place joining thread in rdy queue
+  if(this->join != NULL)
+    add_to_ready_queue(this->join);
 
-    sigprocmask(SIG_BLOCK, &block, NULL);
+  // free allocated memory structures
+  free(this->context->uc_stack.ss_sp);
+  free(this->context);
 
-    //add joining thread to ready queue
+  // we're a zombie
+  this->zombie = TRUE;
 
-    if (this->join != NULL)
-        add_to_ready_queue(this->join);
+  // find the next thread to run
+  set_next_running();
+  // Now we are setting running->next to NULL as well, not needed if not reusing threads?
 
-    //free allocated memory structures
-
-    free(this->context->uc_stack.ss_sp);
-    free(this->context);
-
-    //we're a zombie
-    this->zombie = TRUE;
-
-    //find the next thread to run
-    set_next_running();
-
-    setcontext(running->context); //Threads life ends here
+  setcontext(running->context); // Thread's life ends here
 }
 
 int green_yield()
@@ -130,31 +127,29 @@ int green_yield()
     return 0;
 }
 
-int green_join(green_t *thread)
-{
-
-    if (thread->zombie)
-        return 0;
-
-    green_t *susp = running;
-    sigprocmask(SIG_BLOCK, &block, NULL);
-    //add to waiting threads
-    if (thread->join == NULL)
-        thread->join = susp; // If no thread joining, just put it in join field
-    else
-    {
-        green_t *current = thread->join; // Otherwise, find tail of queue, and add last
-        while (current->next != NULL)
-            current = current->next;
-
-        current->next = susp;
-    }
-    //select the next thread for execution
-    set_next_running();
-
-    swapcontext(susp->context, running->context);
-    sigprocmask(SIG_UNBLOCK, &block, NULL);
+int green_join(green_t* thread) {
+  if(thread->zombie)
     return 0;
+
+  green_t* susp = running;
+  sigprocmask(SIG_BLOCK, &block, NULL);
+  // add to waiting threads
+  if(thread->join == NULL) {
+    thread->join = susp; // If no thread joining, just put it in join field
+  } else {
+    green_t* current = thread->join; // Otherwise, find tail of queue, and add last
+    while(current->next != NULL)
+      current = current->next;
+
+    current->next = susp;
+  }
+
+  // select the next thread for execution
+  set_next_running();
+
+  swapcontext(susp->context, running->context);
+  sigprocmask(SIG_UNBLOCK, &block, NULL);
+  return 0;
 }
 
 void green_cond_init(green_cond_t *cond)
@@ -194,12 +189,11 @@ void green_cond_wait(green_cond_t *cond, green_mutex_t *mutex)
     sigprocmask(SIG_UNBLOCK, &block, NULL);
 }
 
-void green_cond_signal(green_cond_t *cond)
-{
-    sigprocmask(SIG_BLOCK, &block, NULL);
-    green_t *signalled = pop_from_queue(&cond->queue);
-    add_to_ready_queue(signalled);
-    sigprocmask(SIG_UNBLOCK, &block, NULL);
+void green_cond_signal(green_cond_t* cond) {
+  sigprocmask(SIG_BLOCK, &block, NULL);
+  green_t* signalled = pop_from_queue(&cond->queue);
+  add_to_ready_queue(signalled);
+  sigprocmask(SIG_UNBLOCK, &block, NULL);
 }
 
 int green_mutex_init(green_mutex_t *mutex)
@@ -209,37 +203,36 @@ int green_mutex_init(green_mutex_t *mutex)
     return 0;
 }
 
-int green_mutex_lock(green_mutex_t *mutex)
-{
+int green_mutex_lock(green_mutex_t* mutex) {
+  sigprocmask(SIG_BLOCK, &block, NULL);
 
-    sigprocmask(SIG_BLOCK, &block, NULL);
+  green_t* susp = running;
+  // Unlock moves all suspended threads to rdy Q, so here we just
+  // check lock, and add us back to suspended queue and yield
+  // All threads unblock first thing, so this should work
+  while(mutex->taken) {
+    add_to_queue(&mutex->susp, susp);
+    set_next_running(); // sets susp->next = NULL
+    swapcontext(susp->context, running->context);
+  }
 
-    green_t *susp = running;
-
-    // Unlock moves all suspended threads to rdy Q, so here we just
-    // check lock, and add us back to suspended queue and yield
-    // All threads unblock first thing, so this should work
-
-    while (mutex->taken)
-    {
-        add_to_queue(&mutex->susp, susp);
-        set_next_running();
-        swapcontext(susp->context, running->context);
-    }
-
-    mutex->taken = TRUE;
-    sigprocmask(SIG_UNBLOCK, &block, NULL);
-    return 0;
+  mutex->taken = TRUE;
+  sigprocmask(SIG_UNBLOCK, &block, NULL);
+  return 0;
 }
 
-int green_mutex_unlock(green_mutex_t *mutex)
+int green_mutex_unlock(green_mutex_t* mutex) {
+  sigprocmask(SIG_BLOCK, &block, NULL);
+  add_to_ready_queue(mutex->susp); // Adds all suspended to ready Q
+  mutex->susp = NULL;
+  mutex->taken = FALSE;
+  sigprocmask(SIG_UNBLOCK, &block, NULL);
+  return 0;
+}
+
+void add_to_ready_queue(green_t *ready)
 {
-    sigprocmask(SIG_BLOCK, &block, NULL);
-    add_to_ready_queue(mutex->susp);
-    mutex->susp = NULL;
-    mutex->taken = FALSE;
-    sigprocmask(SIG_UNBLOCK, &block, NULL);
-    return 0;
+    add_to_queue(&running, ready);
 }
 
 void set_next_running()
@@ -249,23 +242,6 @@ void set_next_running()
     if (running == NULL) {
         printf("Deadlock, no thread ready to run!\n");
     }
-}
-
-green_t *pop_from_queue(green_t **queue)
-{
-    green_t *popped = *queue;
-
-    if (popped != NULL)
-    {
-        *queue = popped->next;
-        popped->next = NULL;
-    }
-    return popped;
-}
-
-void add_to_ready_queue(green_t *ready)
-{
-    add_to_queue(&running, ready);
 }
 
 void add_to_queue(green_t **queue, green_t *thread_to_add)
@@ -284,16 +260,22 @@ void add_to_queue(green_t **queue, green_t *thread_to_add)
     }
 }
 
-//For debugging
-int queue_length(green_t *queue)
-{
+green_t* pop_from_queue(green_t** queue) {
+  green_t* popped = *queue;
+  if(popped != NULL) {
+    *queue = popped->next;
+    popped->next = NULL;
+  }
+  return popped;
+}
 
-    green_t *current = queue;
-    int counter = 1;
-    while (current->next != NULL)
-    {
-        current = current->next;
-        counter++;
-    }
-    return counter;
+// For debugging
+int queue_length(green_t* queue) {
+  green_t* current = queue;
+  int counter = 1;
+  while(current->next != NULL) {
+    current = current->next;
+    counter++;
+  }
+  return counter;
 }
