@@ -81,34 +81,32 @@ int green_create(green_t* new, void* (*fun)(void*), void* arg) {
   return 0;
 }
 
-void green_thread()
-{
 
-    sigprocmask(SIG_UNBLOCK, &block, NULL);
+void green_thread() {
+  sigprocmask(SIG_UNBLOCK, &block, NULL);
+  green_t* this = running;
 
-    green_t *this = running;
+  // The actual workload of the thread
+  (*this->fun)(this->arg);
+  // Thread workload done, clean up
 
-    (*this->fun)(this->arg);
+  sigprocmask(SIG_BLOCK, &block, NULL);
+  // place joining thread in rdy queue
+  if(this->join != NULL)
+    add_to_ready_queue(this->join);
 
-    sigprocmask(SIG_BLOCK, &block, NULL);
+  // free allocated memory structures
+  free(this->context->uc_stack.ss_sp);
+  free(this->context);
 
-    //add joining thread to ready queue
+  // we're a zombie
+  this->zombie = TRUE;
 
-    if (this->join != NULL)
-        add_to_ready_queue(this->join);
+  // find the next thread to run
+  set_next_running();
+  // Now we are setting running->next to NULL as well, not needed if not reusing threads?
 
-    //free allocated memory structures
-
-    free(this->context->uc_stack.ss_sp);
-    free(this->context);
-
-    //we're a zombie
-    this->zombie = TRUE;
-
-    //find the next thread to run
-    set_next_running();
-
-    setcontext(running->context); //Threads life ends here
+  setcontext(running->context); // Thread's life ends here
 }
 
 int green_yield()
