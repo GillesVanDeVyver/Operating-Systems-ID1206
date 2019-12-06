@@ -256,7 +256,7 @@ void add_to_queue(green_t **queue, green_t *thread_to_add)
         while (current->next != NULL)
             current = current->next;
 
-        current = thread_to_add;
+        current->next = thread_to_add;
     }
 }
 
