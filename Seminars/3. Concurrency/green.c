@@ -157,38 +157,43 @@ void green_cond_init(green_cond_t *cond)
     cond->queue = NULL;
 }
 
-void green_cond_wait(green_cond_t* cond, green_mutex_t* mutex) {
-  sigprocmask(SIG_BLOCK, &block, NULL);
-  add_to_queue(&(cond->queue), running);
+void green_cond_wait(green_cond_t *cond, green_mutex_t *mutex)
+{
 
-  if(mutex != NULL) { // Release lock before waiting
-    add_to_ready_queue(mutex->susp); // Adds all suspended to ready Q
-    mutex->susp = NULL;
-    mutex->taken = FALSE;
-  }
-  green_t* susp = running;
-  set_next_running();
-  swapcontext(susp->context, running->context);
+    sigprocmask(SIG_BLOCK, &block, NULL);
+    add_to_queue(&(mutex->susp), running);
 
-  if(mutex != NULL) { // Reacquire lock before returning
-    while(mutex->taken) { // Duplicated code from mutex_lock
-      add_to_queue(&mutex->susp, susp);
-      set_next_running(); // sets susp->next = NULL
-      swapcontext(susp->context, running->context);
+    if (mutex != NULL)
+    { //Release lock before waiting
+
+        add_to_ready_queue(mutex->susp); //Adds all suspended to ready queue
+        mutex->susp = NULL;
+        mutex->taken = FALSE;
     }
-    mutex->taken = TRUE;
-  }
 
-  sigprocmask(SIG_UNBLOCK, &block, NULL);
+    green_t *susp = running;
+    set_next_running();
+    swapcontext(susp->context, running->context);
+
+    if (mutex != NULL)
+    {
+
+        while (mutex->taken)
+        {
+            add_to_queue(&mutex->susp, susp);
+            set_next_running();
+            swapcontext(susp->context, running->context);
+        }
+        mutex->taken = TRUE;
+    }
+    sigprocmask(SIG_UNBLOCK, &block, NULL);
 }
 
-
-void green_cond_signal(green_cond_t *cond)
-{
-    sigprocmask(SIG_BLOCK, &block, NULL);
-    green_t *signalled = pop_from_queue(&cond->queue);
-    add_to_ready_queue(signalled);
-    sigprocmask(SIG_UNBLOCK, &block, NULL);
+void green_cond_signal(green_cond_t* cond) {
+  sigprocmask(SIG_BLOCK, &block, NULL);
+  green_t* signalled = pop_from_queue(&cond->queue);
+  add_to_ready_queue(signalled);
+  sigprocmask(SIG_UNBLOCK, &block, NULL);
 }
 
 int green_mutex_init(green_mutex_t *mutex)
@@ -198,37 +203,36 @@ int green_mutex_init(green_mutex_t *mutex)
     return 0;
 }
 
-int green_mutex_lock(green_mutex_t *mutex)
-{
+int green_mutex_lock(green_mutex_t* mutex) {
+  sigprocmask(SIG_BLOCK, &block, NULL);
 
-    sigprocmask(SIG_BLOCK, &block, NULL);
+  green_t* susp = running;
+  // Unlock moves all suspended threads to rdy Q, so here we just
+  // check lock, and add us back to suspended queue and yield
+  // All threads unblock first thing, so this should work
+  while(mutex->taken) {
+    add_to_queue(&mutex->susp, susp);
+    set_next_running(); // sets susp->next = NULL
+    swapcontext(susp->context, running->context);
+  }
 
-    green_t *susp = running;
-
-    // Unlock moves all suspended threads to rdy Q, so here we just
-    // check lock, and add us back to suspended queue and yield
-    // All threads unblock first thing, so this should work
-
-    while (mutex->taken)
-    {
-        add_to_queue(&mutex->susp, susp);
-        set_next_running();
-        swapcontext(susp->context, running->context);
-    }
-
-    mutex->taken = TRUE;
-    sigprocmask(SIG_UNBLOCK, &block, NULL);
-    return 0;
+  mutex->taken = TRUE;
+  sigprocmask(SIG_UNBLOCK, &block, NULL);
+  return 0;
 }
 
-int green_mutex_unlock(green_mutex_t *mutex)
+int green_mutex_unlock(green_mutex_t* mutex) {
+  sigprocmask(SIG_BLOCK, &block, NULL);
+  add_to_ready_queue(mutex->susp); // Adds all suspended to ready Q
+  mutex->susp = NULL;
+  mutex->taken = FALSE;
+  sigprocmask(SIG_UNBLOCK, &block, NULL);
+  return 0;
+}
+
+void add_to_ready_queue(green_t *ready)
 {
-    sigprocmask(SIG_BLOCK, &block, NULL);
-    add_to_ready_queue(mutex->susp);
-    mutex->susp = NULL;
-    mutex->taken = FALSE;
-    sigprocmask(SIG_UNBLOCK, &block, NULL);
-    return 0;
+    add_to_queue(&running, ready);
 }
 
 void set_next_running()
@@ -238,23 +242,6 @@ void set_next_running()
     if (running == NULL) {
         printf("Deadlock, no thread ready to run!\n");
     }
-}
-
-green_t *pop_from_queue(green_t **queue)
-{
-    green_t *popped = *queue;
-
-    if (popped != NULL)
-    {
-        *queue = popped->next;
-        popped->next = NULL;
-    }
-    return popped;
-}
-
-void add_to_ready_queue(green_t *ready)
-{
-    add_to_queue(&running, ready);
 }
 
 void add_to_queue(green_t **queue, green_t *thread_to_add)
@@ -273,16 +260,22 @@ void add_to_queue(green_t **queue, green_t *thread_to_add)
     }
 }
 
-//For debugging
-int queue_length(green_t *queue)
-{
+green_t* pop_from_queue(green_t** queue) {
+  green_t* popped = *queue;
+  if(popped != NULL) {
+    *queue = popped->next;
+    popped->next = NULL;
+  }
+  return popped;
+}
 
-    green_t *current = queue;
-    int counter = 1;
-    while (current->next != NULL)
-    {
-        current = current->next;
-        counter++;
-    }
-    return counter;
+// For debugging
+int queue_length(green_t* queue) {
+  green_t* current = queue;
+  int counter = 1;
+  while(current->next != NULL) {
+    current = current->next;
+    counter++;
+  }
+  return counter;
 }
