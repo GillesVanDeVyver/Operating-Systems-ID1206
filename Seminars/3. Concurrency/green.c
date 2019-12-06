@@ -109,45 +109,47 @@ void green_thread() {
   setcontext(running->context); // Thread's life ends here
 }
 
-int green_yield() {
-  sigprocmask(SIG_BLOCK, &block, NULL);
-  green_t* susp = running;
-  // add susp to ready queue
-  add_to_ready_queue(susp);
-  // select the next thread for execution
-  set_next_running();
-  swapcontext(susp->context, running->context); // Save this context to susp and continue from next
-  sigprocmask(SIG_UNBLOCK, &block, NULL);
-
-  return 0;
-}
-
-
-int green_join(green_t *thread)
+int green_yield()
 {
-
-    if (thread->zombie)
-        return 0;
+    sigprocmask(SIG_BLOCK, &block, NULL);
 
     green_t *susp = running;
-    sigprocmask(SIG_BLOCK, &block, NULL);
-    //add to waiting threads
-    if (thread->join == NULL)
-        thread->join = susp; // If no thread joining, just put it in join field
-    else
-    {
-        green_t *current = thread->join; // Otherwise, find tail of queue, and add last
-        while (current->next != NULL)
-            current = current->next;
 
-        current->next = susp;
-    }
+    //add susp to ready queue
+    add_to_ready_queue(susp);
+
     //select the next thread for execution
-    set_next_running();
 
+    set_next_running();
     swapcontext(susp->context, running->context);
     sigprocmask(SIG_UNBLOCK, &block, NULL);
+
     return 0;
+}
+
+int green_join(green_t* thread) {
+  if(thread->zombie)
+    return 0;
+
+  green_t* susp = running;
+  sigprocmask(SIG_BLOCK, &block, NULL);
+  // add to waiting threads
+  if(thread->join == NULL) {
+    thread->join = susp; // If no thread joining, just put it in join field
+  } else {
+    green_t* current = thread->join; // Otherwise, find tail of queue, and add last
+    while(current->next != NULL)
+      current = current->next;
+
+    current->next = susp;
+  }
+
+  // select the next thread for execution
+  set_next_running();
+
+  swapcontext(susp->context, running->context);
+  sigprocmask(SIG_UNBLOCK, &block, NULL);
+  return 0;
 }
 
 void green_cond_init(green_cond_t *cond)
