@@ -246,8 +246,9 @@ void set_next_running()
 {
 
     pop_from_queue(&running);
-    if (running == NULL)
+    if (running == NULL) {
         printf("Deadlock, no thread ready to run!\n");
+    }
 }
 
 green_t *pop_from_queue(green_t **queue)
