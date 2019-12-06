@@ -109,23 +109,19 @@ void green_thread() {
   setcontext(running->context); // Thread's life ends here
 }
 
-int green_yield()
-{
-    sigprocmask(SIG_BLOCK, &block, NULL);
+int green_yield() {
+  sigprocmask(SIG_BLOCK, &block, NULL);
+  green_t* susp = running;
+  // add susp to ready queue
+  add_to_ready_queue(susp);
+  // select the next thread for execution
+  set_next_running();
+  swapcontext(susp->context, running->context); // Save this context to susp and continue from next
+  sigprocmask(SIG_UNBLOCK, &block, NULL);
 
-    green_t *susp = running;
-
-    //add susp to ready queue
-    add_to_ready_queue(susp);
-
-    //select the next thread for execution
-
-    set_next_running();
-    swapcontext(susp->context, running->context);
-    sigprocmask(SIG_UNBLOCK, &block, NULL);
-
-    return 0;
+  return 0;
 }
+
 
 int green_join(green_t *thread)
 {
