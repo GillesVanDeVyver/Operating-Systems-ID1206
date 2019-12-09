@@ -180,7 +180,7 @@ int main() {
   pthread_cond_init(&emptyP, NULL);
   pthread_mutex_init(&mutexP, NULL);
   printf("#Benchmark, creating and producing/consuming with threads!\n#\n#\n");
-  printf("#{#productions\ttimeGreen(ms)\ttimePthread(ms)}\n");
+  printf("#{#productions\ttimeGreen(ms)\ttimePthreads(ms)\n");
   int numRuns = 10;
   for(int run = 1; run <= numRuns; run++) {
     //printf("Starting run %d\n", run);
@@ -195,12 +195,13 @@ int main() {
     testGreen(args);
     c_stop = clock();
     processTimeGreen = ((double)(c_stop - c_start)) / ((double)CLOCKS_PER_SEC/1000);
-    //printf("buffer: %d\n", buffer);
+    //printf("buffer: %d\n", buffer); 
     c_start = clock();
     testPthread(args);
     c_stop = clock();
     processTimeP = ((double)(c_stop - c_start)) / ((double)CLOCKS_PER_SEC/1000);
-    printf("%d\t%f\t%f\n", productions, processTimeGreen, processTimeP);
+    printf("%d\t%f\t%f\n", productions, processTimeGreen, processTimeP); 
+
   }
   // printf("done\n");
 
