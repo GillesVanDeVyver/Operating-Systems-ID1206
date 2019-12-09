@@ -168,7 +168,10 @@ void testPthread(int* args) {
     pthread_join(threads[i], NULL);
 }
 
-int main() {
+int main(int argc, char *argv[]) {
+
+  int numThreads = atoi(argv[1]);
+  printf("nummThreads = %d", numThreads);
   clock_t c_start, c_stop;
   double processTimeGreen = 0, processTimeP = 0;
   green_cond_init(&cond);
