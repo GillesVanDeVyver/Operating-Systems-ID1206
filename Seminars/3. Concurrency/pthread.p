@@ -12,4 +12,4 @@ set ylabel "Time (ms)"
 set xrange [0:20000]
 set yrange [0:180]
 
-plot "pthread.dat" u 1:2 w linespoints title "Pthreads"
+plot "pthread.dat" u 1:2 w linespoints title ""
