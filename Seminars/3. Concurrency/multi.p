@@ -2,7 +2,7 @@
 set terminal png
 set output "multi.png"
 
-set title "Execution time to perform 20k productions with 2 threads "
+set title "Execution time to perform 20.000 productions with 2 threads "
 
 set key right center
 
