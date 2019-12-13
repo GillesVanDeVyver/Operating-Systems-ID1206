@@ -57,6 +57,11 @@ unsigned long  count(char *path) {
     break;
 	}
 
+    if(dirp == NULL) {
+        printf("Not able to open %s\n", path);
+        return 0;
+    }
+
 	closedir(dirp);
 	return total;
 }
