@@ -49,6 +49,8 @@ struct stat file_st;
         fstatat(dirfd(dirp), entry->d_name, &file_st, 0);
 
         printf("\tinode %lu", entry->d_ino);
+        printf("\tdev: 0x%lx", file_st.st_dev);
+        printf("\tinode: %lu", file_st.ino);
         printf("\tsize: %lu", file_st.st_size);
         printf("\tname: %s\n", entry->d_name);
     }
