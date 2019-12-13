@@ -50,7 +50,6 @@ struct stat file_st;
 
         printf("\tinode %lu", entry->d_ino);
         printf("\tdev: 0x%lx", file_st.st_dev);
-        printf("\tinode: %lu", file_st.ino);
         printf("\tsize: %lu", file_st.st_size);
         printf("\tname: %s\n", entry->d_name);
     }
