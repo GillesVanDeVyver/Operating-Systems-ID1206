@@ -1,8 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <dirent.h>
+#include <sys/stat.h>
+
 
 int main(int argc, char *argv[]) {
+struct stat file_st;
 
     if(argc < 2) {
         perror("Usage: myls <dir>\n");
@@ -42,7 +45,11 @@ int main(int argc, char *argv[]) {
                 printf("u:");
                 break;
         }
+        
+        fstatat(dirfd(dirp), entry->d_name, &file_st, 0);
+
         printf("\tinode %lu", entry->d_ino);
+        printf("\tsize: %lu", file_st.st_size);
         printf("\tname: %s\n", entry->d_name);
     }
 }
