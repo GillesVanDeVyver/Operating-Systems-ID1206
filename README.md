@@ -4,7 +4,7 @@ The course provides knowledge of the principles of and how one can implement abs
 virtualisation of resources and timetabling of assignments; mainly as regards execution, memory and persistent storage.
 The structure of an operating system is studied to increase the knowledge of these concepts and also give skills in efficient use of the abstraction level that an operating system offers.
 
-## Intended learning outcomes *
+## Intended learning outcomes
 
 Having passed the course, the student should be able to:
 
